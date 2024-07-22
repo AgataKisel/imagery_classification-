@@ -1,2 +1,2 @@
 # imagery_classification-
-pyhon script for classification using the random forest method
+python script for classification using the random forest method
