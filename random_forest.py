@@ -100,20 +100,26 @@ def random_forest_classification(
         return 1 
     
     num_rasters = img_ds.RasterCount
+
+    training = input_path_traning_data
+    roi = prepare_roi_from_vector(training, img_ds, attribute_name=attribute_name)  
     
     img = img_ds.ReadAsArray()
-    img = np.moveaxis(img, 0, -1)
+
+    if num_rasters > 1:
+        img = np.moveaxis(img, 0, -1)
+    else:
+        img = img[..., np.newaxis]
     
-    training = input_path_traning_data
-    roi = prepare_roi_from_vector(training, img_ds, attribute_name=attribute_name)
     X = img[roi > 0, :]
     y = roi[roi > 0]
     X_train, X_val, y_train, y_val = train_test_split(X, y, train_size=0.8, shuffle=True)
     
     try:
-        rf = RandomForestClassifier(n_estimators=500, oob_score=True)
+        rf = RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, oob_score=True)
         rf = rf.fit(X_train, y_train)
-    except: 
+    except Exception as e: 
+        print(e)
         return 2
 
     # error in the training sample
@@ -131,8 +137,7 @@ def random_forest_classification(
     print(sum_mat)
     print("Metrics by class", file=open(report_path, "a"))
     print(sum_mat, file=open(report_path, "a"))
-    
-    # confusion matrix for validation data
+    # confusion matrix для валидационных данных
     conf_matrix = pd.crosstab(y_val, y_val_pred, margins=True, rownames=['True'], colnames=['Predicted'])
     print("Classification error matrix", file=open(report_path, "a"))
     print(conf_matrix, file=open(report_path, "a"))
@@ -153,5 +158,3 @@ def random_forest_classification(
         return 3
         
     return 0
-    
-        
